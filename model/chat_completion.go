@@ -48,9 +48,15 @@ type ChatCompletionResponse struct {
 	}
 }
 
-func MakeMessage(content string) []Message {
+func MakeMessage(content string, sysMsg string) []Message {
 	messages := make([]Message, 0)
-	// TODO: config.OpenAI.SystemMessage
+
+	if sysMsg != "" {
+		messages = append(messages, Message{
+			Role:    "system",
+			Content: sysMsg,
+		})
+	}
 	messages = append(messages, Message{
 		Role:    "user",
 		Content: content,
