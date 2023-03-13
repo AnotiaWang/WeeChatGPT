@@ -10,6 +10,7 @@ import (
 
 func Default(ctx context.Context) openwechat.MessageHandler {
 	self := ctx.Value(model.SelfKey).(*openwechat.Self)
+	config := ctx.Value(model.ConfigKey).(*model.Config)
 	dispatcher := openwechat.NewMessageMatchDispatcher()
 
 	dispatcher.OnText(func(msgCtx *openwechat.MessageContext) {
@@ -18,62 +19,58 @@ func Default(ctx context.Context) openwechat.MessageHandler {
 		if len(msg.Content) <= 4 {
 			return
 		}
-		if strings.Index(msg.Content, " ") == 0 {
 
-		}
-		if msg.Content[:4] == ":bot" {
+		if strings.Index(msg.Content, config.OpenAI.Prefix) == 0 {
+			log.Println("found message match: " + msg.Content)
 			query := msg.Content[4:]
-
 			response, err := model.ChatCompletion(ctx, model.MakeMessage(query))
 			if err != nil {
 				log.Println("ChatCompletion error: " + err.Error())
 				return
 			}
-			log.Println("回复消息: " + response)
 
 			receiver, err := msg.Receiver()
 			if err != nil {
-				log.Println("Receiver error: " + err.Error())
+				log.Println("get receiver failed: " + err.Error())
 				return
 			}
 			log.Printf("receiver: %v, isSendBySelf: %v", receiver, msg.IsSendBySelf())
 			sender, err := msg.Sender()
 			if err != nil {
-				log.Println("Sender error: " + err.Error())
+				log.Println("get sender failed: " + err.Error())
 				return
 			}
 			log.Printf("sender: %v, isSendBySelf: %v", sender, msg.IsSendBySelf())
 
+			// 和文件传输助手的消息
 			if receiver != nil && receiver.UserName == "filehelper" {
-				log.Println("Reply to filehelper")
 				fh := self.FileHelper()
 				_, err := self.SendTextToFriend(fh, response)
 				if err != nil {
-					log.Println("SendTextToFriend error: " + err.Error())
+					log.Println("reply to filehelper failed: " + err.Error())
 					return
 				}
 			} else if receiver != nil && msg.IsSendBySelf() {
-				log.Println("Is send by self, isGroup:", receiver.IsGroup(), ", isSelf:", receiver.IsSelf(), ", isFriend:", receiver.IsFriend())
 				if receiver.IsGroup() {
 					group, _ := receiver.AsGroup()
-					log.Println("Reply to group")
+					log.Println("replying to group", group.NickName)
 					_, err := self.SendTextToGroup(group, response)
 					if err != nil {
-						log.Println("SendTextToGroup error: " + err.Error())
+						log.Println("SendTextToGroup failed: " + err.Error())
 					}
 				} else {
 					user, _ := receiver.AsFriend()
-					log.Println("Reply to user")
+					log.Println("replying to user", user.NickName)
 					_, err := self.SendTextToFriend(user, response)
 					if err != nil {
-						log.Println("SendTextToFriend error: " + err.Error())
+						log.Println("SendTextToFriend failed: " + err.Error())
 					}
 				}
 			} else {
-				log.Println("Fallback reply to message")
+				log.Println("defaulting to replyText")
 				_, err := msgCtx.ReplyText(response)
 				if err != nil {
-					log.Println("ReplyText error: " + err.Error())
+					log.Println("ReplyText failed: " + err.Error())
 				}
 			}
 		}
