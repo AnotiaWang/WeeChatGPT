@@ -23,7 +23,7 @@ func Default(ctx context.Context) openwechat.MessageHandler {
 		if strings.Index(msg.Content, config.OpenAI.Prefix) == 0 {
 			log.Println("found message match: " + msg.Content)
 			query := msg.Content[4:]
-			response, err := model.ChatCompletion(ctx, model.MakeMessage(query))
+			response, err := model.ChatCompletion(ctx, model.MakeMessage(query, config.OpenAI.SystemMsg))
 			if err != nil {
 				log.Println("ChatCompletion error: " + err.Error())
 				return

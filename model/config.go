@@ -29,6 +29,7 @@ type OpenAIConfig struct {
 	Model     string `yaml:"model"`
 	SecretKey string `yaml:"secretKey"`
 	Prefix    string `yaml:"prefix"`
+	SystemMsg string `yaml:"systemMsg"`
 }
 
 func InitConfigFile() error {
@@ -40,10 +41,12 @@ openai:
   endpoint: https://api.openai.com/v1/chat/completions
   # 模型
   model: gpt-3.5-turbo
-  # OpenAI SecretKey (SK)
+  # OpenAI SecretKey ( https://platform.openai.com/account/api-keys )
   secretKey: 
   # 前缀
   prefix: ChatGPT,
+  # 设定身份，如：你是 ChatGPT，OpenAI 发布的语言模型
+  systemMsg:
 `
 	err := os.WriteFile("./config.yml", []byte(str), 0644)
 	if err != nil {
